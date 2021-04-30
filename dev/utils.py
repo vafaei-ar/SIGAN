@@ -14,6 +14,15 @@ from pathlib import Path
 def ch_mkdir(directory):
     Path(directory).mkdir(parents=True, exist_ok=True)
 
+def in_notebook():
+    try:
+        from IPython import get_ipython
+        if 'IPKernelApp' not in get_ipython().config:  # pragma: no cover
+            return False
+    except ImportError:
+        return False
+    return True
+
 def describe_labels(y0,verbose=0):
     y = y0+0
     if y.ndim==2:
@@ -467,10 +476,10 @@ class CycleGan(keras.Model):
         self.disc_X.save_weights(path+'/disc_X.h5')
         self.disc_Y.save_weights(path+'/disc_Y.h5')
 
-        lr1 = cycle_gan_model.gen_G.optimizer.lr
-        lr2 = cycle_gan_model.gen_F.optimizer.lr 
-        lr3 = cycle_gan_model.disc_X.optimizer.lr
-        lr4 = cycle_gan_model.disc_Y.optimizer.lr
+        lr1 = self.gen_G_optimizer.lr
+        lr2 = self.gen_F_optimizer.lr 
+        lr3 = self.disc_X_optimizer.lr
+        lr4 = self.disc_Y_optimizer.lr
         np.save(path+'/lrs',[lr1,lr2,lr3,lr4])
 
     def loadit(self,path):
@@ -479,20 +488,17 @@ class CycleGan(keras.Model):
         self.gen_F.load_weights(path+'/gen_F.h5')
         self.disc_X.load_weights(path+'/disc_X.h5')
         self.disc_Y.load_weights(path+'/disc_Y.h5')
+#         lr1 = cycle_gan_model.gen_G.optimizer.lr
+#         lr2 = cycle_gan_model.gen_F.optimizer.lr 
+#         lr3 = cycle_gan_model.disc_X.optimizer.lr
+#         lr4 = cycle_gan_model.disc_Y.optimizer.lr
+        [lr1,lr2,lr3,lr4] = np.load(path+'/lrs.npy')
+#         print('Loaded learning rates are: ',lr1,lr2,lr3,lr4)
+        K.set_value(self.gen_G_optimizer.lr,lr1)
+        K.set_value(self.gen_F_optimizer.lr,lr2)
+        K.set_value(self.disc_X_optimizer.lr,lr3)
+        K.set_value(self.disc_Y_optimizer.lr,lr4)
 
-        lr1 = cycle_gan_model.gen_G.optimizer.lr
-        lr2 = cycle_gan_model.gen_F.optimizer.lr 
-        lr3 = cycle_gan_model.disc_X.optimizer.lr
-        lr4 = cycle_gan_model.disc_Y.optimizer.lr
-        
-        K.set_value(self.gen_G.optimizer.lr,lr1)
-        K.set_value(self.gen_F.optimizer.lr,lr2)
-        K.set_value(self.disc_X.optimizer.lr,lr3)
-        K.set_value(self.disc_Y.optimizer.lr,lr4)
-        
-        [lr1,lr2,lr3,lr4] = np.save(path+'/lrs.npy')
-        
-        print('Loaded learning rates are: ',lr1,lr2,lr3,lr4)
 
 
 """## Create a callback that periodically saves generated images"""
